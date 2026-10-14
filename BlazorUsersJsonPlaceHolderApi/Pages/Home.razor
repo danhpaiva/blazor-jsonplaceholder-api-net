@@ -1,7 +1,82 @@
 ﻿@page "/"
+@using BlazorUsersJsonPlaceHolderApi.Models
+@inject HttpClient Http
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Primeiro Usuário</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Consulta de Usuário Único</h1>
 
-Welcome to your new app.
+<p>Exibindo os dados do primeiro usuário obtido da API do JSONPlaceholder.</p>
+
+<button class="btn btn-primary mb-4" @onclick="CarregarPrimeiroUsuario">Carregar Usuário</button>
+
+@if (usuario != null)
+{
+    <h3 class="mt-4">Resultado:</h3>
+    <div class="card p-4 shadow-sm" style="max-width: 600px;">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><strong>ID:</strong> @usuario.Id</li>
+            <li class="list-group-item"><strong>Nome:</strong> @usuario.Name</li>
+            <li class="list-group-item"><strong>Username:</strong> @usuario.Username</li>
+            <li class="list-group-item"><strong>E-mail:</strong> @usuario.Email</li>
+            <li class="list-group-item"><strong>Telefone:</strong> @usuario.Phone</li>
+            <li class="list-group-item"><strong>Website:</strong> @usuario.Website</li>
+            <li class="list-group-item"><strong>Empresa:</strong> @usuario.Company?.Name</li>
+        </ul>
+    </div>
+}
+else if (carregando)
+{
+    <p><em>Carregando usuário...</em></p>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-4">
+        @errorMessage
+    </div>
+}
+
+@code {
+    private User? usuario;
+    private string? errorMessage;
+    private bool carregando = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarPrimeiroUsuario();
+    }
+
+    private async Task CarregarPrimeiroUsuario()
+    {
+        errorMessage = string.Empty;
+        carregando = true;
+        usuario = null;
+
+        try
+        {
+            var url = "https://jsonplaceholder.typicode.com/users";
+            
+            // Faz a requisição buscando a lista completa e pega apenas o primeiro com .FirstOrDefault()
+            var usuarios = await Http.GetFromJsonAsync<List<User>>(url);
+            usuario = usuarios?.FirstOrDefault();
+
+            if (usuario == null)
+            {
+                errorMessage = "Nenhum usuário foi encontrado.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Erro ao conectar à API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ocorreu um erro inesperado: {ex.Message}";
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+}
